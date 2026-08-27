@@ -12,6 +12,53 @@ export interface ProductSummary {
   on_sale: boolean
   concerns: string[]
   key_actives: string[]
+  /** Null when the viewer has no avoid-list: "not checked", not "clean". */
+  allergens: AllergenScreen | null
+}
+
+export interface AllergenHit {
+  inci_name: string
+  common_name: string | null
+  position: number
+  prominent: boolean
+  matched: string
+  group_label: string | null
+  summary: string
+}
+
+export interface AllergenScreen {
+  /** `clear` only when we read the whole list; `incomplete` when we could not. */
+  verdict: 'flagged' | 'clear' | 'incomplete'
+  hits: AllergenHit[]
+  unrecognized: string[]
+  unknown_count: number
+  screened: boolean
+}
+
+export interface AllergenTerm {
+  query: string
+  label: string
+  kind: 'group' | 'ingredient' | 'unrecognized'
+  key: string | null
+  note: string | null
+  recognized: boolean
+  member_count: number
+}
+
+export interface AllergenGroup {
+  key: string
+  label: string
+  note: string | null
+  members: string[]
+  /** Products in the catalogue this group hits, so a no-op group is visible. */
+  product_matches: number
+}
+
+export interface ExcludedProduct {
+  slug: string
+  name: string
+  brand: string
+  hits: AllergenHit[]
 }
 
 export interface Ingredient {
@@ -115,6 +162,7 @@ export interface SkinProfile {
   fragrance_free: boolean
   budget_max: number | null
   categories: string[]
+  avoid_ingredients: string[]
 }
 
 export interface Recommendation {
@@ -137,6 +185,8 @@ export interface QuizResponse {
   recommendations: Recommendation[]
   routine: { am: ProductSummary[]; pm: ProductSummary[] }
   conflicts: Conflict[]
+  excluded: ExcludedProduct[]
+  allergen_terms: AllergenTerm[]
 }
 
 export interface ChatMessage {

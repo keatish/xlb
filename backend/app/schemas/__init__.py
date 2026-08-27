@@ -58,6 +58,49 @@ class PriceHistory(BaseModel):
     points: list[PricePoint]
 
 
+class AllergenHit(BaseModel):
+    """One ingredient in a product that the user's avoid-list covers."""
+
+    inci_name: str
+    common_name: str | None = None
+    position: int
+    prominent: bool = False
+    matched: str
+    group_label: str | None = None
+    summary: str
+
+
+class AllergenScreenOut(BaseModel):
+    """Result of screening one product. `verdict` is deliberately three-valued:
+    a product we could not fully read is `incomplete`, never `clear`."""
+
+    verdict: str = "clear"
+    hits: list[AllergenHit] = Field(default_factory=list)
+    unrecognized: list[str] = Field(default_factory=list)
+    unknown_count: int = 0
+    screened: bool = False
+
+
+class AllergenTermOut(BaseModel):
+    query: str
+    label: str
+    kind: str
+    key: str | None = None
+    note: str | None = None
+    recognized: bool = True
+    member_count: int = 0
+
+
+class AllergenGroupOut(BaseModel):
+    key: str
+    label: str
+    note: str | None = None
+    members: list[str] = Field(default_factory=list)
+    #: Products in the catalogue this group actually matches. Shown in the UI so
+    #: a group that hits nothing does not read as a broken filter.
+    product_matches: int = 0
+
+
 class ProductSummary(BaseModel):
     id: int
     slug: str
@@ -72,6 +115,7 @@ class ProductSummary(BaseModel):
     on_sale: bool = False
     concerns: list[str] = Field(default_factory=list)
     key_actives: list[str] = Field(default_factory=list)
+    allergens: AllergenScreenOut | None = None
 
 
 class ProductAnalysis(BaseModel):
@@ -117,6 +161,7 @@ class QuizRequest(BaseModel):
     fragrance_free: bool = False
     budget_max: float | None = None
     categories: list[str] = Field(default_factory=list)
+    avoid_ingredients: list[str] = Field(default_factory=list)
     limit: int = 12
 
 
@@ -141,10 +186,22 @@ class RoutineOut(BaseModel):
     pm: list[ProductSummary] = Field(default_factory=list)
 
 
+class ExcludedProduct(BaseModel):
+    slug: str
+    name: str
+    brand: str
+    hits: list[AllergenHit] = Field(default_factory=list)
+
+
 class QuizResponse(BaseModel):
     recommendations: list[Recommendation] = Field(default_factory=list)
     routine: RoutineOut = Field(default_factory=RoutineOut)
     conflicts: list[ConflictOut] = Field(default_factory=list)
+    # Products removed outright for containing something the user avoids. Kept
+    # separate from `recommendations` so the UI can say what it withheld rather
+    # than silently returning a shorter list.
+    excluded: list[ExcludedProduct] = Field(default_factory=list)
+    allergen_terms: list[AllergenTermOut] = Field(default_factory=list)
 
 
 class ConflictRequest(BaseModel):

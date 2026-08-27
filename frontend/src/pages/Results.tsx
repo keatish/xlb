@@ -114,6 +114,9 @@ export function Results() {
               <Chip key={concern} size="small" variant="outlined" label={concern.replace('_', ' ')} sx={{ textTransform: 'capitalize' }} />
             ))}
             {profile!.sensitive && <Chip size="small" variant="outlined" label="sensitive" />}
+            {profile!.avoid_ingredients.map((term) => (
+              <Chip key={term} size="small" color="error" variant="outlined" label={`avoiding ${term}`} />
+            ))}
             {profile!.budget_max && <Chip size="small" variant="outlined" label={`under $${profile!.budget_max}`} />}
           </Stack>
         </Stack>
@@ -123,6 +126,39 @@ export function Results() {
       </Stack>
 
       {isLoading && <Skeleton variant="rounded" height={280} />}
+
+      {data && data.excluded.length > 0 && (
+        <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
+          <AlertTitle>
+            {data.excluded.length} product{data.excluded.length === 1 ? '' : 's'} hidden for your
+            allergies
+          </AlertTitle>
+          <Stack component="ul" spacing={0.25} sx={{ m: 0, pl: 2.5 }}>
+            {data.excluded.slice(0, 5).map((item) => (
+              <Typography component="li" variant="body2" key={item.slug}>
+                {item.brand} {item.name} — {item.hits[0]?.summary}
+              </Typography>
+            ))}
+          </Stack>
+          {data.excluded.length > 5 && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+              and {data.excluded.length - 5} more.
+            </Typography>
+          )}
+        </Alert>
+      )}
+
+      {data && data.allergen_terms.some((term) => !term.recognized) && (
+        <Alert severity="warning" variant="outlined" sx={{ mb: 2 }}>
+          We don't recognise{' '}
+          {data.allergen_terms
+            .filter((term) => !term.recognized)
+            .map((term) => `"${term.query}"`)
+            .join(', ')}
+          , so we searched for that wording exactly as you typed it. Check the spelling, or use
+          the INCI name from the pack.
+        </Alert>
+      )}
 
       {data && data.conflicts.length > 0 && (
         <Stack spacing={1.5} sx={{ mb: 4 }}>
@@ -212,7 +248,9 @@ export function Results() {
             Nothing scored well enough
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Try widening your budget or selecting another concern.
+            {data.excluded.length > 0
+              ? `Try widening your budget or selecting another concern — ${data.excluded.length} product${data.excluded.length === 1 ? ' was' : 's were'} also removed for your allergies.`
+              : 'Try widening your budget or selecting another concern.'}
           </Typography>
         </Paper>
       )}

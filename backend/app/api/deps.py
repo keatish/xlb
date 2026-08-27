@@ -23,6 +23,8 @@ from app.models import (
     Retailer,
 )
 from app.schemas import (
+    AllergenHit,
+    AllergenScreenOut,
     IngredientOut,
     PricePoint,
     PriceHistory,
@@ -31,6 +33,7 @@ from app.schemas import (
     ProductSummary,
     RetailerPrice,
 )
+from app.services.allergens import AllergenTerm, screen
 from app.services.analysis import Analysis, analyze
 
 # A listing that has not been refreshed in this long is shown with a staleness
@@ -123,7 +126,41 @@ def build_analysis(product: Product) -> Analysis:
     return analyze(names)
 
 
-def to_summary(product: Product, prices: list[dict], analysis: Analysis | None = None) -> ProductSummary:
+def to_screen(analysis: Analysis | None, terms: list[AllergenTerm] | None) -> AllergenScreenOut | None:
+    """Screen one product, or return None when the user has no avoid-list.
+
+    None is meaningfully different from an empty result: it means "not checked",
+    and the UI must not render a clean bill of health for it.
+    """
+    if not terms:
+        return None
+    result = screen(analysis, terms)
+    return AllergenScreenOut(
+        verdict=result.verdict,
+        hits=[
+            AllergenHit(
+                inci_name=hit.inci_name,
+                common_name=hit.common_name,
+                position=hit.position,
+                prominent=hit.prominent,
+                matched=hit.matched,
+                group_label=hit.group_label,
+                summary=hit.summary,
+            )
+            for hit in result.hits
+        ],
+        unrecognized=result.unrecognized,
+        unknown_count=result.unknown_count,
+        screened=result.screened,
+    )
+
+
+def to_summary(
+    product: Product,
+    prices: list[dict],
+    analysis: Analysis | None = None,
+    terms: list[AllergenTerm] | None = None,
+) -> ProductSummary:
     priced = [p["price"] for p in prices if p["price"] is not None]
     actives: list[str] = []
     if analysis:
@@ -151,11 +188,17 @@ def to_summary(product: Product, prices: list[dict], analysis: Analysis | None =
         on_sale=any(p.get("was_price") for p in prices),
         concerns=[link.concern.key for link in product.concerns if link.concern],
         key_actives=actives,
+        allergens=to_screen(analysis, terms),
     )
 
 
-def to_detail(product: Product, prices: list[dict], analysis: Analysis) -> ProductDetail:
-    summary = to_summary(product, prices, analysis)
+def to_detail(
+    product: Product,
+    prices: list[dict],
+    analysis: Analysis,
+    terms: list[AllergenTerm] | None = None,
+) -> ProductDetail:
+    summary = to_summary(product, prices, analysis, terms)
     ingredients = [
         IngredientOut(
             position=i.position,

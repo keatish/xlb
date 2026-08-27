@@ -1,4 +1,5 @@
-import { Box, Card, CardActionArea, Chip, Stack, Typography } from '@mui/material'
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline'
+import { Box, Card, CardActionArea, Chip, Stack, Tooltip, Typography } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import type { ProductSummary } from '../api/types'
 import { CATEGORY_LABELS, formatPrice } from '../format'
@@ -15,6 +16,10 @@ export function ProductCard({ product, showSpread = true }: Props) {
     product.best_price !== null && product.highest_price !== null
       ? product.highest_price - product.best_price
       : 0
+
+  // One badge, not one chip per hit - the card is a summary, and the product
+  // page spells out exactly which ingredients matched.
+  const hits = product.allergens?.hits ?? []
 
   return (
     <Card
@@ -49,6 +54,19 @@ export function ProductCard({ product, showSpread = true }: Props) {
             {CATEGORY_LABELS[product.category] ?? product.category}
             {product.size_label ? ` · ${product.size_label}` : ''}
           </Typography>
+
+          {hits.length > 0 && (
+            <Tooltip title={hits.map((hit) => hit.summary).join(' · ')}>
+              <Chip
+                icon={<ErrorOutlineIcon />}
+                label={`Contains ${hits.length} you avoid`}
+                size="small"
+                color="error"
+                variant="outlined"
+                sx={{ alignSelf: 'flex-start' }}
+              />
+            </Tooltip>
+          )}
 
           {product.key_actives.length > 0 && (
             <Stack direction="row" spacing={0.5} flexWrap="wrap" useFlexGap sx={{ pt: 0.5 }}>

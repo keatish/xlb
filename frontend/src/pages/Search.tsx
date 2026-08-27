@@ -20,6 +20,7 @@ import { useSearchParams } from 'react-router-dom'
 import { api } from '../api/client'
 import { ProductCard } from '../components/ProductCard'
 import { CATEGORY_LABELS } from '../format'
+import { useSkinProfile } from '../hooks/useSkinProfile'
 
 export function Search() {
   const [params, setParams] = useSearchParams()
@@ -40,9 +41,12 @@ export function Search() {
     setParams(next)
   }
 
+  const { profile } = useSkinProfile()
+  const avoid = profile?.avoid_ingredients ?? []
+
   const { data: filters } = useQuery({ queryKey: ['filters'], queryFn: api.filters })
   const { data, isLoading } = useQuery({
-    queryKey: ['products', q, category, concern, brand, sort, page],
+    queryKey: ['products', q, category, concern, brand, sort, page, avoid],
     queryFn: () =>
       api.products({
         q: q || undefined,
@@ -52,6 +56,7 @@ export function Search() {
         sort,
         page,
         page_size: 24,
+        avoid,
       }),
   })
 

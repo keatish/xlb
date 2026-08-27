@@ -5,6 +5,7 @@ import {
   CardActionArea,
   Chip,
   Container,
+  Divider,
   FormControlLabel,
   Grid,
   Paper,
@@ -20,6 +21,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import type { SkinProfile } from '../api/types'
+import { AllergyPicker } from '../components/AllergyPicker'
 import { emptyProfile, useSkinProfile } from '../hooks/useSkinProfile'
 
 const STEPS = ['Skin type', 'Concerns', 'Sensitivities', 'Budget']
@@ -155,6 +157,23 @@ export function Quiz() {
             <Typography variant="caption" color="text.secondary">
               These act as penalties, not filters — a strong product is still shown, with
               the reason for concern spelled out.
+            </Typography>
+
+            <Divider sx={{ my: 1 }} />
+
+            <Typography variant="h4" sx={{ fontSize: '1.15rem' }}>
+              Anything you are allergic to?
+            </Typography>
+            <AllergyPicker
+              compact
+              value={draft.avoid_ingredients}
+              onChange={(next) => update({ avoid_ingredients: next })}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Unlike the switches above, this is a hard filter — products containing anything
+              you list are removed from your results, not just marked down. Choosing a group
+              catches the whole family: “fragrance” also finds Linalool, Limonene and the rest
+              of the 26 components the EU requires to be declared by name.
             </Typography>
           </Stack>
         )}
