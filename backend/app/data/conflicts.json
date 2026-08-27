@@ -1,0 +1,232 @@
+{
+  "concerns": [
+    {"key": "acne", "label": "Acne & breakouts", "description": "Clogged pores, blackheads, whiteheads and inflamed spots."},
+    {"key": "dryness", "label": "Dryness & dehydration", "description": "Tightness, flaking and a skin barrier that struggles to hold water."},
+    {"key": "dark_spots", "label": "Dark spots & uneven tone", "description": "Post-acne marks, sun spots and melasma."},
+    {"key": "aging", "label": "Fine lines & firmness", "description": "Loss of elasticity, expression lines and collagen decline."},
+    {"key": "redness", "label": "Redness & sensitivity", "description": "Reactive, easily irritated skin, rosacea and visible flushing."},
+    {"key": "texture", "label": "Rough texture", "description": "Bumpy, uneven surface and enlarged-looking pores."},
+    {"key": "oiliness", "label": "Excess oil & shine", "description": "Overactive sebum production through the day."},
+    {"key": "dullness", "label": "Dullness", "description": "Skin that looks tired, grey or lacking radiance."},
+    {"key": "barrier", "label": "Damaged barrier", "description": "Stinging, over-exfoliation and compromised skin defences."}
+  ],
+
+  "concern_ingredients": {
+    "acne": [
+      {"group": "bha", "weight": 1.0},
+      {"group": "benzoyl_peroxide", "weight": 1.0},
+      {"group": "retinoid", "weight": 0.9},
+      {"group": "azelaic", "weight": 0.8},
+      {"group": "sulfur", "weight": 0.7},
+      {"group": "niacinamide", "weight": 0.6}
+    ],
+    "dryness": [
+      {"inci": "Hyaluronic Acid", "weight": 0.8},
+      {"inci": "Sodium Hyaluronate", "weight": 0.8},
+      {"inci": "Glycerin", "weight": 0.7},
+      {"inci": "Ceramide NP", "weight": 1.0},
+      {"inci": "Squalane", "weight": 0.8},
+      {"inci": "Panthenol", "weight": 0.7},
+      {"inci": "Petrolatum", "weight": 0.9},
+      {"inci": "Urea", "weight": 0.7},
+      {"inci": "Cholesterol", "weight": 0.7}
+    ],
+    "dark_spots": [
+      {"group": "vitamin_c", "weight": 1.0},
+      {"group": "brightener", "weight": 1.0},
+      {"group": "niacinamide", "weight": 0.8},
+      {"group": "aha", "weight": 0.7},
+      {"group": "retinoid", "weight": 0.7},
+      {"group": "azelaic", "weight": 0.8}
+    ],
+    "aging": [
+      {"group": "retinoid", "weight": 1.0},
+      {"group": "peptide", "weight": 0.8},
+      {"group": "vitamin_c", "weight": 0.8},
+      {"group": "bakuchiol", "weight": 0.7},
+      {"group": "antioxidant", "weight": 0.6}
+    ],
+    "redness": [
+      {"group": "soothing", "weight": 1.0},
+      {"group": "azelaic", "weight": 0.9},
+      {"group": "niacinamide", "weight": 0.7},
+      {"inci": "Panthenol", "weight": 0.7},
+      {"inci": "Allantoin", "weight": 0.6},
+      {"inci": "Colloidal Oatmeal", "weight": 0.8},
+      {"inci": "Beta-Glucan", "weight": 0.6}
+    ],
+    "texture": [
+      {"group": "aha", "weight": 1.0},
+      {"group": "bha", "weight": 0.8},
+      {"group": "pha", "weight": 0.7},
+      {"group": "retinoid", "weight": 0.8},
+      {"inci": "Urea", "weight": 0.6}
+    ],
+    "oiliness": [
+      {"group": "niacinamide", "weight": 1.0},
+      {"group": "bha", "weight": 0.9},
+      {"inci": "Zinc PCA", "weight": 0.8},
+      {"group": "retinoid", "weight": 0.6}
+    ],
+    "dullness": [
+      {"group": "vitamin_c", "weight": 1.0},
+      {"group": "aha", "weight": 0.9},
+      {"group": "antioxidant", "weight": 0.7},
+      {"group": "brightener", "weight": 0.7},
+      {"group": "pha", "weight": 0.5}
+    ],
+    "barrier": [
+      {"inci": "Ceramide NP", "weight": 1.0},
+      {"inci": "Ceramide AP", "weight": 0.9},
+      {"inci": "Ceramide EOP", "weight": 0.9},
+      {"inci": "Cholesterol", "weight": 0.8},
+      {"inci": "Panthenol", "weight": 0.8},
+      {"group": "niacinamide", "weight": 0.8},
+      {"group": "soothing", "weight": 0.8},
+      {"inci": "Squalane", "weight": 0.6}
+    ]
+  },
+
+  "skin_type_preferences": {
+    "dry": {
+      "prefer": [
+        {"inci": "Ceramide NP", "weight": 1.0},
+        {"inci": "Squalane", "weight": 0.8},
+        {"inci": "Butyrospermum Parkii Butter", "weight": 0.7},
+        {"inci": "Petrolatum", "weight": 0.8},
+        {"inci": "Glycerin", "weight": 0.6},
+        {"inci": "Hyaluronic Acid", "weight": 0.6}
+      ],
+      "avoid": [
+        {"inci": "Alcohol Denat.", "weight": 1.0},
+        {"inci": "Ethanol", "weight": 0.8},
+        {"inci": "Sodium Lauryl Sulfate", "weight": 0.8}
+      ]
+    },
+    "oily": {
+      "prefer": [
+        {"group": "niacinamide", "weight": 1.0},
+        {"group": "bha", "weight": 0.9},
+        {"inci": "Zinc PCA", "weight": 0.7}
+      ],
+      "avoid": [
+        {"inci": "Cocos Nucifera Oil", "weight": 1.0},
+        {"inci": "Isopropyl Myristate", "weight": 1.0},
+        {"inci": "Isopropyl Palmitate", "weight": 0.8},
+        {"inci": "Butyrospermum Parkii Butter", "weight": 0.5}
+      ]
+    },
+    "combination": {
+      "prefer": [
+        {"group": "niacinamide", "weight": 0.8},
+        {"inci": "Glycerin", "weight": 0.6},
+        {"inci": "Squalane", "weight": 0.6}
+      ],
+      "avoid": [
+        {"inci": "Isopropyl Myristate", "weight": 0.6},
+        {"inci": "Cocos Nucifera Oil", "weight": 0.6}
+      ]
+    },
+    "normal": {
+      "prefer": [
+        {"inci": "Glycerin", "weight": 0.5},
+        {"group": "antioxidant", "weight": 0.5}
+      ],
+      "avoid": []
+    },
+    "sensitive": {
+      "prefer": [
+        {"group": "soothing", "weight": 1.0},
+        {"inci": "Panthenol", "weight": 0.8},
+        {"inci": "Allantoin", "weight": 0.7},
+        {"inci": "Colloidal Oatmeal", "weight": 0.8},
+        {"inci": "Ceramide NP", "weight": 0.7}
+      ],
+      "avoid": [
+        {"inci": "Fragrance", "weight": 1.0},
+        {"inci": "Parfum", "weight": 1.0},
+        {"inci": "Alcohol Denat.", "weight": 0.9},
+        {"inci": "Lavandula Angustifolia Oil", "weight": 0.9},
+        {"inci": "Menthol", "weight": 0.8},
+        {"inci": "Limonene", "weight": 0.6},
+        {"inci": "Linalool", "weight": 0.6},
+        {"group": "aha", "weight": 0.5}
+      ]
+    }
+  },
+
+  "conflict_rules": [
+    {
+      "id": "retinoid_aha",
+      "groups": ["retinoid", "aha"],
+      "severity": "high",
+      "title": "Retinoid + AHA",
+      "explanation": "Both accelerate cell turnover. Layered in the same routine they commonly cause stinging, peeling and a damaged barrier.",
+      "guidance": "Alternate nights - retinoid one evening, acid the next. Never in the same application."
+    },
+    {
+      "id": "retinoid_bha",
+      "groups": ["retinoid", "bha"],
+      "severity": "medium",
+      "title": "Retinoid + BHA",
+      "explanation": "Two exfoliating pathways at once. Tolerable for some skin, but a frequent cause of irritation when starting out.",
+      "guidance": "Separate into AM and PM, or alternate nights until you know your tolerance."
+    },
+    {
+      "id": "retinoid_bp",
+      "groups": ["retinoid", "benzoyl_peroxide"],
+      "severity": "high",
+      "title": "Retinoid + Benzoyl Peroxide",
+      "explanation": "Benzoyl peroxide oxidises and deactivates most retinoids, so you get the irritation of both with the benefit of neither. Adapalene is the exception - it is stable alongside benzoyl peroxide.",
+      "guidance": "Use benzoyl peroxide in the morning and your retinoid at night."
+    },
+    {
+      "id": "vitc_aha",
+      "groups": ["vitamin_c", "aha"],
+      "severity": "medium",
+      "title": "L-Ascorbic Acid + AHA",
+      "explanation": "Both need a low pH and both sting. Stacking them raises the total acid load on your skin with no added benefit.",
+      "guidance": "Vitamin C in the morning, acids at night."
+    },
+    {
+      "id": "vitc_niacinamide",
+      "groups": ["vitamin_c", "niacinamide"],
+      "severity": "low",
+      "title": "L-Ascorbic Acid + Niacinamide",
+      "explanation": "Largely an internet myth - the flushing reaction requires heat and impurities not found in modern formulas. Some people still find the pair tingles.",
+      "guidance": "Safe to layer for most people. Separate them only if you notice flushing."
+    },
+    {
+      "id": "vitc_retinoid",
+      "groups": ["vitamin_c", "retinoid"],
+      "severity": "medium",
+      "title": "L-Ascorbic Acid + Retinoid",
+      "explanation": "Very different optimal pH levels, and together they are a common source of irritation on sensitive skin.",
+      "guidance": "Vitamin C in the morning, retinoid at night - which is the ideal schedule for both anyway."
+    },
+    {
+      "id": "double_acid",
+      "groups": ["aha", "bha"],
+      "severity": "medium",
+      "title": "AHA + BHA",
+      "explanation": "Many products already blend the two at balanced strengths. Stacking two separate acid products often over-exfoliates.",
+      "guidance": "Pick one acid product per session. If both are in a single formula, that is fine as sold."
+    },
+    {
+      "id": "bp_aha",
+      "groups": ["benzoyl_peroxide", "aha"],
+      "severity": "medium",
+      "title": "Benzoyl Peroxide + AHA",
+      "explanation": "Both are drying, and together they strip the barrier fast on acne-prone skin that is already compromised.",
+      "guidance": "Alternate days rather than layering."
+    },
+    {
+      "id": "bp_vitc",
+      "groups": ["benzoyl_peroxide", "vitamin_c"],
+      "severity": "high",
+      "title": "Benzoyl Peroxide + L-Ascorbic Acid",
+      "explanation": "Benzoyl peroxide oxidises vitamin C, degrading it before it can work.",
+      "guidance": "Use them at opposite ends of the day, or on alternate days."
+    }
+  ]
+}
