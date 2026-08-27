@@ -1,4 +1,6 @@
 import type {
+  ChatMessage,
+  ChatReply,
   Conflict,
   Dupe,
   FilterOptions,
@@ -77,6 +79,14 @@ export const api = {
     request<QuizResponse>('/quiz/recommend', {
       method: 'POST',
       body: JSON.stringify(profile),
+    }),
+
+  chatStatus: () => request<{ enabled: boolean }>('/chat/status'),
+
+  chat: (body: { message: string; history: ChatMessage[]; avoid: string[] }) =>
+    request<ChatReply>('/chat', {
+      method: 'POST',
+      body: JSON.stringify(body),
     }),
 
   conflicts: (productIds: number[]) =>

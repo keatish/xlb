@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -155,3 +156,28 @@ class FilterOptions(BaseModel):
     concerns: list[ConcernOut]
     brands: list[BrandOut]
     price_range: dict
+
+
+class ChatMessage(BaseModel):
+    """One prior turn, replayed from the client.
+
+    `role` is constrained to user and assistant on purpose: accepting "system"
+    here would let a caller rewrite the assistant's instructions, and accepting
+    "tool" would let it fabricate tool results.
+    """
+
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=4000)
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    history: list[ChatMessage] = Field(default_factory=list, max_length=40)
+    avoid: list[str] = Field(default_factory=list, max_length=50)
+
+
+class ChatResponse(BaseModel):
+    reply: str
+    # Echoed back so the client can persist anything recorded this turn.
+    avoid: list[str] = Field(default_factory=list)
+    tool_calls: list[str] = Field(default_factory=list)

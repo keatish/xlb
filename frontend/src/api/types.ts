@@ -138,3 +138,15 @@ export interface QuizResponse {
   routine: { am: ProductSummary[]; pm: ProductSummary[] }
   conflicts: Conflict[]
 }
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatReply {
+  reply: string
+  /** Echoed back including anything recorded this turn, so the client can persist it. */
+  avoid: string[]
+  tool_calls: string[]
+}

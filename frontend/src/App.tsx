@@ -1,6 +1,7 @@
 import SpaIcon from '@mui/icons-material/Spa'
 import { AppBar, Box, Button, Container, Stack, Toolbar, Typography } from '@mui/material'
 import { Link as RouterLink, Route, Routes } from 'react-router-dom'
+import { ChatWidget } from './components/ChatWidget'
 import { Home } from './pages/Home'
 import { Product } from './pages/Product'
 import { Quiz } from './pages/Quiz'
@@ -66,6 +67,7 @@ export default function App() {
         </Routes>
       </Box>
       <Footer />
+      <ChatWidget />
     </Box>
   )
 }
