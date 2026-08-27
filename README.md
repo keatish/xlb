@@ -105,14 +105,41 @@ retailers with 90 days of generated history. Formulas are representative rather
 than transcriptions of any real label, and the retailer names are deliberately
 fictional — none of it should be read as real pricing.
 
-The live ingestion path (`app/scrapers/`) is built and works against real
-sources, but is not what populates the app today.
+Alongside it, `app/jobs/ingest.py` pulls **real** products from the retailers in
+`scrapers/registry.py` and writes them into the same schema:
+
+```bash
+python -m app.jobs.ingest --limit 10 --dry-run   # fetch and report, write nothing
+python -m app.jobs.ingest --limit 10             # write
+```
+
+Per product it discovers in-scope skincare from the retailer's public catalog
+feed, fetches the full record (barcode, image, description), enriches the INCI
+list from INCIDecoder — retailers do not publish ingredients — derives concern
+weights from that list so the product answers the quiz, then looks for the same
+SKU at a second retailer so there is a price to compare. It is idempotent:
+re-running matches on barcode, then slug, and appends a price snapshot rather
+than duplicating the catalog.
+
+Two things worth knowing about live rows:
+
+- **Ingredients are best-effort.** Roughly half of products have no confident
+  INCIDecoder match, so they land with no INCI list and therefore no concerns,
+  and are invisible to the quiz. That is a coverage gap, not an error.
+- **Sizes are usually absent.** Neither retailer publishes size in a parseable
+  field, so `size_value` is null and the size gate in matching cannot help.
+  Barcode matching carries the weight instead, which is why cross-retailer
+  matches come back at confidence 1.0 or not at all.
+
+Scope is enforced in `ingest.py`, not in `classify_category()` — that function is
+a classifier with a `TREATMENT` fallback, so left to itself it will happily file
+a hair brush as skincare.
 
 ## Status
 
-Working end to end on seed data. Not yet done:
+Working end to end. Not yet done:
 
 - Alembic migrations (schema is `create_all` for now)
-- Ingestion wired to the live scrapers as the default data source
-- Product images (seed data has none)
+- Scheduled ingestion (the job is manual; only price refresh is scheduled)
+- Ingredient coverage for live products without an INCIDecoder match
 - Frontend tests, and a Compare page for viewing products side by side
