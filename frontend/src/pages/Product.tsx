@@ -21,6 +21,7 @@ import { IngredientList } from '../components/IngredientList'
 import { PriceChart } from '../components/PriceChart'
 import { PriceTable } from '../components/PriceTable'
 import { ProductCard } from '../components/ProductCard'
+import { ProductImage } from '../components/ProductImage'
 import { CATEGORY_LABELS, formatPrice } from '../format'
 
 export function Product() {
@@ -90,7 +91,20 @@ export function Product() {
 
       <Grid container spacing={5}>
         <Grid item xs={12} md={7}>
-          <Stack spacing={1}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={{ xs: 2, sm: 3 }}
+            alignItems="flex-start"
+          >
+            <Box sx={{ width: { xs: '100%', sm: 200 }, flexShrink: 0 }}>
+              <ProductImage
+                src={product.image_url}
+                alt={`${product.brand} ${product.name}`}
+                fallbackLabel={product.brand}
+              />
+            </Box>
+
+            <Stack spacing={1} sx={{ minWidth: 0, flexGrow: 1 }}>
             <Link
               component={RouterLink}
               to={`/search?q=${encodeURIComponent(product.brand)}`}
@@ -130,6 +144,7 @@ export function Product() {
                 {product.description}
               </Typography>
             )}
+            </Stack>
           </Stack>
         </Grid>
 

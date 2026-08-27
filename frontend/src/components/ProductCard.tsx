@@ -2,6 +2,7 @@ import { Box, Card, CardActionArea, Chip, Stack, Typography } from '@mui/materia
 import { Link as RouterLink } from 'react-router-dom'
 import type { ProductSummary } from '../api/types'
 import { CATEGORY_LABELS, formatPrice } from '../format'
+import { ProductImage } from './ProductImage'
 
 interface Props {
   product: ProductSummary
@@ -27,6 +28,14 @@ export function ProductCard({ product, showSpread = true }: Props) {
         to={`/product/${product.slug}`}
         sx={{ height: '100%', p: 2.5, display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}
       >
+        <Box sx={{ mb: 1.5 }}>
+          <ProductImage
+            src={product.image_url}
+            alt={`${product.brand} ${product.name}`}
+            fallbackLabel={product.brand}
+          />
+        </Box>
+
         <Stack spacing={1} sx={{ flexGrow: 1 }}>
           <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.2 }}>
             {product.brand}
