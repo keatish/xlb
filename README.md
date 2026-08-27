@@ -31,10 +31,14 @@ python -m venv .venv
 .venv/Scripts/python.exe -m pip install -e ".[dev]"   # Windows
 # source .venv/bin/activate && pip install -e ".[dev]" # macOS/Linux
 
-alembic upgrade head
-python -m app.jobs.seed          # synthetic seed data
-uvicorn app.main:app --reload    # http://localhost:8000/docs
+python -m app.jobs.seed --reset  # creates tables + synthetic seed data
+python -m pytest                 # 55 tests
+python -m uvicorn app.main:app --reload   # http://localhost:8000/docs
 ```
+
+The schema is currently created with SQLAlchemy `create_all` on startup. Alembic
+is declared as a dependency but migrations are not wired up yet — that is the
+next thing to do before this touches a database anyone cares about.
 
 ```bash
 # Frontend
@@ -93,6 +97,22 @@ frontend/src/
   components/  ProductCard, PriceTable, IngredientList, PriceChart
 ```
 
+## Data
+
+The catalog ships as **synthetic seed data** (`app/data/seed_products.py`): 44
+plausible skincare products with realistic INCI lists, priced across 4 fictional
+retailers with 90 days of generated history. Formulas are representative rather
+than transcriptions of any real label, and the retailer names are deliberately
+fictional — none of it should be read as real pricing.
+
+The live ingestion path (`app/scrapers/`) is built and works against real
+sources, but is not what populates the app today.
+
 ## Status
 
-Under active development.
+Working end to end on seed data. Not yet done:
+
+- Alembic migrations (schema is `create_all` for now)
+- Ingestion wired to the live scrapers as the default data source
+- Product images (seed data has none)
+- Frontend tests, and a Compare page for viewing products side by side
