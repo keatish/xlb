@@ -1,11 +1,14 @@
+import HealthAndSafetyIcon from '@mui/icons-material/HealthAndSafety'
 import SearchIcon from '@mui/icons-material/Search'
 import {
+  Alert,
   Box,
   Button,
   Chip,
   Container,
   Grid,
   InputAdornment,
+  Paper,
   Skeleton,
   Stack,
   TextField,
@@ -15,6 +18,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
+import { AllergyPicker } from '../components/AllergyPicker'
 import { ProductCard } from '../components/ProductCard'
 import { CATEGORY_LABELS } from '../format'
 import { useSkinProfile } from '../hooks/useSkinProfile'
@@ -22,13 +26,16 @@ import { useSkinProfile } from '../hooks/useSkinProfile'
 export function Home() {
   const navigate = useNavigate()
   const [query, setQuery] = useState('')
-  const { hasProfile } = useSkinProfile()
+  const { profile, hasProfile } = useSkinProfile()
+  const avoid = profile?.avoid_ingredients ?? []
 
   const { data: filters } = useQuery({ queryKey: ['filters'], queryFn: api.filters })
   const { data: deals, isLoading } = useQuery({
-    queryKey: ['deals'],
-    queryFn: () => api.deals(8),
+    queryKey: ['deals', avoid],
+    queryFn: () => api.deals(8, avoid),
   })
+
+  const flagged = (deals ?? []).filter((product) => (product.allergens?.hits.length ?? 0) > 0)
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -80,6 +87,44 @@ export function Home() {
           )}
         </Stack>
       </Stack>
+
+      <Paper
+        variant="outlined"
+        sx={{ p: { xs: 2.5, md: 3 }, mb: 7, borderColor: avoid.length ? 'error.main' : 'divider' }}
+      >
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{ mb: 0.5 }}
+        >
+          <HealthAndSafetyIcon
+            fontSize="small"
+            sx={{ color: avoid.length ? 'error.main' : 'primary.main' }}
+          />
+          <Typography variant="h4">Anything you are allergic to?</Typography>
+        </Stack>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2.5 }}>
+          Add it once and we will check every ingredient list against it — here, in search, on
+          every product page, and when building your routine. Choosing a group catches the whole
+          family: “fragrance” also finds Linalool, Limonene and the other 24 components the EU
+          requires to be declared by name.
+        </Typography>
+
+        <AllergyPicker />
+
+        {avoid.length > 0 && (
+          <Alert
+            severity={flagged.length > 0 ? 'warning' : 'success'}
+            variant="outlined"
+            sx={{ mt: 2.5 }}
+          >
+            {flagged.length > 0
+              ? `${flagged.length} of the ${deals?.length ?? 0} products below contain something you avoid — look for the red badge.`
+              : `Screening ${avoid.length} entr${avoid.length === 1 ? 'y' : 'ies'}. Nothing below contains them.`}
+          </Alert>
+        )}
+      </Paper>
 
       {filters && filters.categories.length > 0 && (
         <Box sx={{ mb: 7 }}>

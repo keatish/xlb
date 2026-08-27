@@ -228,5 +228,226 @@
       "explanation": "Benzoyl peroxide oxidises vitamin C, degrading it before it can work.",
       "guidance": "Use them at opposite ends of the day, or on alternate days."
     }
-  ]
+  ],
+
+  "allergen_groups": [
+    {
+      "key": "fragrance",
+      "label": "Fragrance",
+      "note": "Undisclosed scent blends plus the 26 fragrance components the EU requires to be declared by name. Fragrance is the single most common cause of cosmetic contact allergy.",
+      "members": [
+        "Fragrance",
+        "Parfum",
+        "Alpha-Isomethyl Ionone",
+        "Amyl Cinnamal",
+        "Amylcinnamyl Alcohol",
+        "Anise Alcohol",
+        "Benzyl Alcohol",
+        "Benzyl Benzoate",
+        "Benzyl Cinnamate",
+        "Benzyl Salicylate",
+        "Butylphenyl Methylpropional",
+        "Cinnamal",
+        "Cinnamyl Alcohol",
+        "Citral",
+        "Citronellol",
+        "Coumarin",
+        "Eugenol",
+        "Evernia Furfuracea Extract",
+        "Evernia Prunastri Extract",
+        "Farnesol",
+        "Geraniol",
+        "Hexyl Cinnamal",
+        "Hydroxycitronellal",
+        "Hydroxyisohexyl 3-Cyclohexene Carboxaldehyde",
+        "Isoeugenol",
+        "Limonene",
+        "Linalool",
+        "Methyl 2-Octynoate"
+      ]
+    },
+    {
+      "key": "essential_oils",
+      "label": "Essential oils",
+      "note": "Botanical oils used for scent. Naturally rich in the same terpenes that make fragrance allergenic.",
+      "members": [
+        "Lavandula Angustifolia Oil",
+        "Melaleuca Alternifolia Leaf Oil",
+        "Citrus Limon Peel Oil",
+        "Mentha Piperita Oil",
+        "Eucalyptus Globulus Leaf Oil"
+      ]
+    },
+    {
+      "key": "preservative_allergens",
+      "label": "Isothiazolinone preservatives",
+      "note": "MI and MCI caused a Europe-wide contact allergy epidemic and are now restricted to rinse-off products.",
+      "members": [
+        "Methylisothiazolinone",
+        "Methylchloroisothiazolinone"
+      ]
+    },
+    {
+      "key": "formaldehyde_releasers",
+      "label": "Formaldehyde releasers",
+      "note": "Preservatives that work by slowly releasing formaldehyde. Relevant to anyone patch-test positive for formaldehyde.",
+      "members": [
+        "Imidazolidinyl Urea",
+        "Diazolidinyl Urea",
+        "DMDM Hydantoin",
+        "Quaternium-15"
+      ]
+    },
+    {
+      "key": "parabens",
+      "label": "Parabens",
+      "note": "Preservative family. Genuine paraben allergy is uncommon, but it is one of the most frequently avoided groups.",
+      "members": [
+        "Methylparaben",
+        "Propylparaben"
+      ]
+    },
+    {
+      "key": "sulfates",
+      "label": "Sulfates",
+      "note": "Strong anionic surfactants. More often an irritant than a true allergen, but a common request.",
+      "members": [
+        "Sodium Lauryl Sulfate",
+        "Sodium Laureth Sulfate"
+      ]
+    },
+    {
+      "key": "lanolin",
+      "label": "Lanolin",
+      "note": "Wool-derived occlusive. Lanolin alcohol is the fraction responsible for most lanolin allergy.",
+      "members": [
+        "Lanolin",
+        "Lanolin Alcohol"
+      ]
+    },
+    {
+      "key": "nut_oils",
+      "label": "Nut and seed oils",
+      "note": "Tree-nut, peanut and seed derived oils, for anyone managing a nut or seed allergy.",
+      "members": [
+        "Prunus Amygdalus Dulcis Oil",
+        "Corylus Avellana Seed Oil",
+        "Arachis Hypogaea Oil",
+        "Argania Spinosa Kernel Oil",
+        "Sesamum Indicum Seed Oil",
+        "Cocos Nucifera Oil",
+        "Butyrospermum Parkii Butter"
+      ]
+    },
+    {
+      "key": "gluten_sources",
+      "label": "Wheat and oat derivatives",
+      "note": "Wheat- and oat-derived ingredients, for coeliac disease or wheat allergy. Topical gluten is not absorbed, but it matters around the mouth and for contact urticaria.",
+      "members": [
+        "Triticum Vulgare Germ Oil",
+        "Hydrolyzed Wheat Protein",
+        "Avena Sativa Kernel Extract",
+        "Colloidal Oatmeal"
+      ]
+    },
+    {
+      "key": "soy",
+      "label": "Soy",
+      "note": "Soy-derived ingredients, for soy allergy.",
+      "members": [
+        "Glycine Soja Oil"
+      ]
+    },
+    {
+      "key": "chemical_uv_filters",
+      "label": "Chemical UV filters",
+      "note": "Organic UV filters. Oxybenzone in particular is the leading photoallergen among sunscreen actives.",
+      "members": [
+        "Benzophenone-3",
+        "Avobenzone",
+        "Octinoxate",
+        "Octocrylene",
+        "Homosalate",
+        "Ethylhexyl Triazone",
+        "Tinosorb S",
+        "Uvinul A Plus"
+      ]
+    },
+    {
+      "key": "contact_allergens",
+      "label": "Classic patch-test allergens",
+      "note": "Substances that appear on standard dermatology patch-test panels because they cause allergic contact dermatitis often enough to be worth testing for.",
+      "members": [
+        "Myroxylon Pereirae Resin",
+        "Colophonium",
+        "Propylene Glycol",
+        "Lanolin",
+        "Lanolin Alcohol",
+        "Cocamidopropyl Betaine",
+        "Propolis Extract",
+        "Methylisothiazolinone",
+        "Methylchloroisothiazolinone",
+        "Fragrance"
+      ]
+    }
+  ],
+
+  "allergen_synonyms": {
+    "added fragrance": "fragrance",
+    "almond": "nut_oils",
+    "chemical sunscreen": "chemical_uv_filters",
+    "chemical sunscreens": "chemical_uv_filters",
+    "chemical uv filter": "chemical_uv_filters",
+    "chemical uv filters": "chemical_uv_filters",
+    "cmit": "preservative_allergens",
+    "coconut": "nut_oils",
+    "contact allergen": "contact_allergens",
+    "contact allergens": "contact_allergens",
+    "essential oil": "essential_oils",
+    "essential oils": "essential_oils",
+    "formaldehyde": "formaldehyde_releasers",
+    "formaldehyde releaser": "formaldehyde_releasers",
+    "formaldehyde releasers": "formaldehyde_releasers",
+    "fragrance": "fragrance",
+    "fragrances": "fragrance",
+    "gluten": "gluten_sources",
+    "isothiazolinone": "preservative_allergens",
+    "isothiazolinones": "preservative_allergens",
+    "kathon": "preservative_allergens",
+    "lanolin": "lanolin",
+    "mci": "preservative_allergens",
+    "mi": "preservative_allergens",
+    "mit": "preservative_allergens",
+    "nut": "nut_oils",
+    "nut oil": "nut_oils",
+    "nut oils": "nut_oils",
+    "nuts": "nut_oils",
+    "oat": "gluten_sources",
+    "oatmeal": "gluten_sources",
+    "oats": "gluten_sources",
+    "oxybenzone": "chemical_uv_filters",
+    "paraben": "parabens",
+    "parabens": "parabens",
+    "parfum": "fragrance",
+    "patch test allergens": "contact_allergens",
+    "peanut": "nut_oils",
+    "perfume": "fragrance",
+    "scent": "fragrance",
+    "sesame": "nut_oils",
+    "shea": "nut_oils",
+    "sles": "sulfates",
+    "sls": "sulfates",
+    "soy": "soy",
+    "soya": "soy",
+    "soybean": "soy",
+    "sulfate": "sulfates",
+    "sulfates": "sulfates",
+    "sulphate": "sulfates",
+    "sulphates": "sulfates",
+    "tree nut": "nut_oils",
+    "tree nuts": "nut_oils",
+    "wheat": "gluten_sources",
+    "wool alcohol": "lanolin",
+    "wool fat": "lanolin"
+  }
 }

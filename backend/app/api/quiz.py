@@ -10,15 +10,19 @@ from app.db import get_session
 from app.models import Concern, Product
 from app.models.enums import CATEGORY_LABELS
 from app.schemas import (
+    AllergenGroupOut,
+    AllergenTermOut,
     ConcernOut,
     ConflictOut,
     ConflictRequest,
+    ExcludedProduct,
     QuizRequest,
     QuizResponse,
     Recommendation,
     RoutineOut,
 )
 from app.api.deps import build_analysis, latest_prices, product_query, to_summary
+from app.services.allergens import allergen_groups, resolve_terms, screen
 from app.services.analysis import detect_conflicts
 from app.services.recommend import SkinProfile, build_routine, rank, score_product
 
@@ -51,6 +55,42 @@ async def quiz_options(session: AsyncSession = Depends(get_session)) -> dict:
     }
 
 
+@router.get("/allergens", response_model=list[AllergenGroupOut])
+async def allergen_options(
+    session: AsyncSession = Depends(get_session),
+) -> list[AllergenGroupOut]:
+    """Suggestions for the allergy input.
+
+    Groups are offered first because they are what people actually mean: someone
+    who reacts to fragrance wants all 26 declarable components caught, not just
+    the word "Parfum". Free text is still accepted - this list is a starting
+    point, not the set of allowed answers.
+
+    `product_matches` is how many products in the catalogue a group actually
+    hits. Without it a group that matches nothing is indistinguishable from a
+    broken filter: you tick it, and the page looks identical.
+    """
+    groups = allergen_groups()
+    products = list((await session.execute(product_query())).scalars().unique())
+    analyses = [build_analysis(product) for product in products]
+
+    counts: dict[str, int] = {}
+    for group in groups:
+        terms = resolve_terms([group["key"]])
+        counts[group["key"]] = sum(1 for a in analyses if screen(a, terms).hits)
+
+    return [
+        AllergenGroupOut(
+            key=group["key"],
+            label=group["label"],
+            note=group.get("note"),
+            members=group["members"],
+            product_matches=counts.get(group["key"], 0),
+        )
+        for group in groups
+    ]
+
+
 @router.post("/quiz/recommend", response_model=QuizResponse)
 async def recommend(
     payload: QuizRequest, session: AsyncSession = Depends(get_session)
@@ -77,12 +117,30 @@ async def recommend(
         categories=payload.categories,
     )
 
+    # An allergy is a filter, not a penalty. Everything else in the recommender
+    # is a soft score adjustment, but a product containing something the user
+    # reacts to should not appear at all - so it is dropped here, before
+    # scoring, rather than pushed down the ranking. Excluding in the route also
+    # keeps score_product's contract intact: every point it awards or removes
+    # still traces to an ingredient's effect on the skin.
+    terms = resolve_terms(payload.avoid_ingredients)
     summaries = {}
     analyses = {}
     scored = []
+    excluded: list[ExcludedProduct] = []
     for product in products:
         analysis = build_analysis(product)
-        summary = to_summary(product, prices.get(product.id, []), analysis)
+        summary = to_summary(product, prices.get(product.id, []), analysis, terms)
+        if summary.allergens and summary.allergens.hits:
+            excluded.append(
+                ExcludedProduct(
+                    slug=product.slug,
+                    name=summary.name,
+                    brand=summary.brand,
+                    hits=summary.allergens.hits,
+                )
+            )
+            continue
         analyses[product.id] = analysis
         summaries[product.id] = summary
         scored.append(
@@ -128,7 +186,24 @@ async def recommend(
         )
     ]
 
-    return QuizResponse(recommendations=recommendations, routine=routine, conflicts=conflicts)
+    return QuizResponse(
+        recommendations=recommendations,
+        routine=routine,
+        conflicts=conflicts,
+        excluded=excluded,
+        allergen_terms=[
+            AllergenTermOut(
+                query=t.query,
+                label=t.label,
+                kind=t.kind,
+                key=t.key,
+                note=t.note,
+                recognized=t.recognized,
+                member_count=len(t.members),
+            )
+            for t in terms
+        ],
+    )
 
 
 @router.post("/routine/conflicts", response_model=list[ConflictOut])

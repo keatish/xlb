@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useSyncExternalStore } from 'react'
 import type { SkinProfile } from '../api/types'
 
 const STORAGE_KEY = 'xlb.skin-profile'
@@ -11,6 +11,7 @@ export const emptyProfile: SkinProfile = {
   fragrance_free: false,
   budget_max: null,
   categories: [],
+  avoid_ingredients: [],
 }
 
 function read(): SkinProfile | null {
@@ -24,36 +25,56 @@ function read(): SkinProfile | null {
   }
 }
 
+// One shared snapshot for the whole app. Several components read the profile at
+// once - the header badge, the page, the picker - and they must all re-render
+// when it changes. Per-component useState cannot do that: the `storage` event
+// fires only in OTHER tabs, so the tab that saved would be the one tab left
+// showing stale data.
+let snapshot: SkinProfile | null = read()
+const listeners = new Set<() => void>()
+
+function emit() {
+  listeners.forEach((listener) => listener())
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener)
+  // Cross-tab sync still matters: the quiz may be retaken in another tab.
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEY) {
+      snapshot = read()
+      emit()
+    }
+  }
+  window.addEventListener('storage', onStorage)
+  return () => {
+    listeners.delete(listener)
+    window.removeEventListener('storage', onStorage)
+  }
+}
+
+// Must return a stable reference between renders or React re-renders forever.
+function getSnapshot(): SkinProfile | null {
+  return snapshot
+}
+
+function write(next: SkinProfile | null) {
+  snapshot = next
+  try {
+    if (next) window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    else window.localStorage.removeItem(STORAGE_KEY)
+  } catch {
+    // Non-fatal: the profile still works for this session.
+  }
+  emit()
+}
+
 /** The skin profile lives in localStorage - there are no user accounts in v1. */
 export function useSkinProfile() {
-  const [profile, setProfileState] = useState<SkinProfile | null>(() => read())
+  const profile = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 
-  useEffect(() => {
-    // Keep tabs in sync if the quiz is retaken in another one.
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === STORAGE_KEY) setProfileState(read())
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
-
-  const setProfile = useCallback((next: SkinProfile) => {
-    setProfileState(next)
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
-    } catch {
-      // Non-fatal: the quiz still works for this session.
-    }
-  }, [])
-
-  const clearProfile = useCallback(() => {
-    setProfileState(null)
-    try {
-      window.localStorage.removeItem(STORAGE_KEY)
-    } catch {
-      /* ignore */
-    }
-  }, [])
+  const setProfile = useCallback((next: SkinProfile) => write(next), [])
+  const clearProfile = useCallback(() => write(null), [])
 
   return { profile, setProfile, clearProfile, hasProfile: profile !== null }
 }

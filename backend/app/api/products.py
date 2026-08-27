@@ -20,6 +20,7 @@ from app.schemas import (
     ProductPage,
     ProductSummary,
 )
+from app.services.allergens import resolve_terms
 from app.api.deps import (
     build_analysis,
     latest_prices,
@@ -44,6 +45,7 @@ async def list_products(
     sort: str = Query("relevance", pattern="^(relevance|price_asc|price_desc|name)$"),
     page: int = Query(1, ge=1),
     page_size: int = Query(24, ge=1, le=100),
+    avoid: list[str] = Query(default_factory=list, description="ingredients or groups to screen for"),
     session: AsyncSession = Depends(get_session),
 ) -> ProductPage:
     stmt = product_query().join(Brand, Brand.id == Product.brand_id)
@@ -72,9 +74,12 @@ async def list_products(
     products = list((await session.execute(stmt)).scalars().unique())
 
     prices = await latest_prices(session, [p.id for p in products])
+    # Resolved once for the whole page; screening then rides along on the
+    # analysis this loop already builds, so it costs no extra queries.
+    terms = resolve_terms(avoid)
     summaries: list[ProductSummary] = []
     for product in products:
-        summary = to_summary(product, prices.get(product.id, []), build_analysis(product))
+        summary = to_summary(product, prices.get(product.id, []), build_analysis(product), terms)
         # Price filters apply to the best available price, which is what a user
         # comparing prices actually cares about.
         if min_price is not None and (summary.best_price is None or summary.best_price < min_price):
@@ -146,6 +151,7 @@ async def filter_options(session: AsyncSession = Depends(get_session)) -> Filter
 @router.get("/deals", response_model=list[ProductSummary])
 async def deals(
     limit: int = Query(8, ge=1, le=40),
+    avoid: list[str] = Query(default_factory=list),
     session: AsyncSession = Depends(get_session),
 ) -> list[ProductSummary]:
     """Products with the biggest gap between the cheapest and dearest retailer.
@@ -156,8 +162,9 @@ async def deals(
     products = list((await session.execute(product_query())).scalars().unique())
     prices = await latest_prices(session, [p.id for p in products])
 
+    terms = resolve_terms(avoid)
     summaries = [
-        to_summary(p, prices.get(p.id, []), build_analysis(p)) for p in products
+        to_summary(p, prices.get(p.id, []), build_analysis(p), terms) for p in products
     ]
     comparable = [
         s for s in summaries
@@ -169,7 +176,9 @@ async def deals(
 
 @router.get("/{slug}", response_model=ProductDetail)
 async def product_detail(
-    slug: str, session: AsyncSession = Depends(get_session)
+    slug: str,
+    avoid: list[str] = Query(default_factory=list),
+    session: AsyncSession = Depends(get_session),
 ) -> ProductDetail:
     product = (
         await session.execute(product_query().where(Product.slug == slug))
@@ -178,7 +187,7 @@ async def product_detail(
         raise HTTPException(status_code=404, detail="product not found")
 
     prices = (await latest_prices(session, [product.id])).get(product.id, [])
-    detail = to_detail(product, prices, build_analysis(product))
+    detail = to_detail(product, prices, build_analysis(product), resolve_terms(avoid))
 
     history = await price_history(session, product.id, days=90)
     points = [p.price for series in history for p in series.points]

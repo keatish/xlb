@@ -23,13 +23,18 @@ import { PriceTable } from '../components/PriceTable'
 import { ProductCard } from '../components/ProductCard'
 import { ProductImage } from '../components/ProductImage'
 import { CATEGORY_LABELS, formatPrice } from '../format'
+import { useSkinProfile } from '../hooks/useSkinProfile'
 
 export function Product() {
   const { slug = '' } = useParams()
+  const { profile } = useSkinProfile()
+  const avoid = profile?.avoid_ingredients ?? []
 
+  // `avoid` is in the key so editing the profile refetches rather than serving
+  // a cached, unscreened copy.
   const { data: product, isLoading, isError } = useQuery({
-    queryKey: ['product', slug],
-    queryFn: () => api.product(slug),
+    queryKey: ['product', slug, avoid],
+    queryFn: () => api.product(slug, avoid),
     enabled: Boolean(slug),
   })
 
@@ -193,7 +198,11 @@ export function Product() {
             {product.ingredients.length} listed
           </Typography>
         </Stack>
-        <IngredientList ingredients={product.ingredients} analysis={product.analysis} />
+        <IngredientList
+          ingredients={product.ingredients}
+          analysis={product.analysis}
+          allergens={product.allergens}
+        />
       </Box>
 
       {dupes && dupes.length > 0 && (
