@@ -12,3 +12,7 @@ dist/
 .DS_Store
 dist/
 .vite/
+
+# TypeScript incremental build cache — regenerated on every compile.
+tsconfig.tsbuildinfo
+*.tsbuildinfo
