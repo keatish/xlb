@@ -36,6 +36,17 @@ logger = logging.getLogger(__name__)
 # that the model does not drown in options or the context in tokens.
 MAX_RESULTS = 6
 
+# Every price in the catalog is USD today; the snapshot rows carry the currency
+# so the assistant is told rather than left to infer it.
+DEFAULT_CURRENCY = "USD"
+
+
+def _currency_of(price_rows: list[dict]) -> str:
+    for row in price_rows:
+        if row.get("currency"):
+            return row["currency"]
+    return DEFAULT_CURRENCY
+
 
 @dataclass(slots=True)
 class ChatContext:
@@ -235,8 +246,18 @@ TOOL_DEFINITIONS: list[dict] = [
 # ---------------------------------------------------------------------------
 
 
-def format_summary(summary, reasons: list[str] | None = None, warnings: list[str] | None = None) -> dict:
-    """One product, trimmed to the fields the model actually uses."""
+def format_summary(
+    summary,
+    reasons: list[str] | None = None,
+    warnings: list[str] | None = None,
+    currency: str | None = None,
+) -> dict:
+    """One product, trimmed to the fields the model actually uses.
+
+    `currency` is always sent alongside a price. Without it the model has to
+    guess a symbol, and it guesses wrong - an observed run rendered USD prices
+    with a pound sign, which is a correct number reported as the wrong money.
+    """
     out: dict = {
         "slug": summary.slug,
         "brand": summary.brand,
@@ -244,6 +265,7 @@ def format_summary(summary, reasons: list[str] | None = None, warnings: list[str
         "category": summary.category,
         "size": summary.size_label,
         "best_price": summary.best_price,
+        "currency": currency or DEFAULT_CURRENCY,
         "retailers": summary.retailer_count,
         "on_sale": summary.on_sale,
     }
@@ -274,7 +296,9 @@ def format_ingredients(analysis: Analysis, limit: int = 40) -> dict:
     }
 
 
-def format_prices(prices: list[dict], history_low: float | None = None) -> dict:
+def format_prices(
+    prices: list[dict], history_low: float | None = None, currency: str | None = None
+) -> dict:
     """Retailer prices, cheapest first, with the fields a shopper asks about."""
     rows = [
         {
@@ -288,7 +312,7 @@ def format_prices(prices: list[dict], history_low: float | None = None) -> dict:
         if p.get("price") is not None
     ]
     rows.sort(key=lambda r: r["price"])
-    out: dict = {"retailers": rows}
+    out: dict = {"retailers": rows, "currency": currency or DEFAULT_CURRENCY}
     if rows:
         out["cheapest"] = rows[0]["retailer"]
         out["spread"] = round(rows[-1]["price"] - rows[0]["price"], 2)
@@ -360,12 +384,17 @@ async def _load_products(ctx: ChatContext, stmt) -> list[Product]:
     return list((await ctx.session.execute(stmt)).scalars().unique())
 
 
-async def _summarise(ctx: ChatContext, products: list[Product]) -> list[tuple[Product, Analysis, object]]:
+async def _summarise(
+    ctx: ChatContext, products: list[Product]
+) -> list[tuple[Product, Analysis, object, str]]:
     prices = await latest_prices(ctx.session, [p.id for p in products])
     out = []
     for product in products:
         analysis = build_analysis(product)
-        out.append((product, analysis, to_summary(product, prices.get(product.id, []), analysis)))
+        rows = prices.get(product.id, [])
+        out.append(
+            (product, analysis, to_summary(product, rows, analysis), _currency_of(rows))
+        )
     return out
 
 
@@ -389,10 +418,10 @@ async def search_products(ctx: ChatContext, query: str, category: str | None = N
     rows = await _summarise(ctx, await _load_products(ctx, stmt))
 
     triples = []
-    for product, analysis, summary in rows:
+    for product, analysis, summary, currency in rows:
         if max_price is not None and (summary.best_price is None or summary.best_price > max_price):
             continue
-        triples.append((product.id, analysis, format_summary(summary)))
+        triples.append((product.id, analysis, format_summary(summary, currency=currency)))
 
     filtered = apply_allergen_filter(triples, ctx.allergens)
     filtered["products"] = filtered["products"][:MAX_RESULTS]
@@ -459,7 +488,12 @@ async def recommend_products(
         (
             s.product_id,
             analyses[s.product_id],
-            format_summary(summaries[s.product_id], reasons=s.reasons, warnings=s.warnings),
+            format_summary(
+                summaries[s.product_id],
+                reasons=s.reasons,
+                warnings=s.warnings,
+                currency=_currency_of(prices.get(s.product_id, [])),
+            ),
         )
         for s in top
     ]
@@ -480,7 +514,7 @@ async def get_product_details(ctx: ChatContext, slug: str) -> dict:
     prices = await latest_prices(ctx.session, [product.id])
     summary = to_summary(product, prices.get(product.id, []), analysis)
 
-    payload = format_summary(summary)
+    payload = format_summary(summary, currency=_currency_of(prices.get(product.id, [])))
     payload["ingredients"] = format_ingredients(analysis)
 
     reason = blocked_reason(analysis, ctx.allergens)
@@ -498,7 +532,8 @@ async def compare_prices(ctx: ChatContext, slug: str) -> dict:
     history = await price_history(ctx.session, product.id, days=90)
     lows = [p.price for series in history for p in series.points]
 
-    out = format_prices(prices.get(product.id, []), min(lows) if lows else None)
+    rows = prices.get(product.id, [])
+    out = format_prices(rows, min(lows) if lows else None, currency=_currency_of(rows))
     out["product"] = f"{product.brand.name} {product.name}" if product.brand else product.name
     return out
 
@@ -509,8 +544,9 @@ async def find_cheaper_dupes(ctx: ChatContext, slug: str) -> dict:
         return {"error": f"No product with slug {slug!r}."}
 
     rows = await _summarise(ctx, await _load_products(ctx, product_query()))
-    analyses = {p.id: a for p, a, _ in rows}
-    summaries = {p.id: s for p, _, s in rows}
+    analyses = {p.id: a for p, a, _, _ in rows}
+    summaries = {p.id: s for p, _, s, _ in rows}
+    currencies = {p.id: c for p, _, _, c in rows}
 
     target = summaries[product.id]
     scores = find_dupes(
@@ -520,7 +556,7 @@ async def find_cheaper_dupes(ctx: ChatContext, slug: str) -> dict:
         target_category=target.category,
         candidates=[
             (p.id, analyses[p.id], summaries[p.id].best_price, summaries[p.id].category)
-            for p, _, _ in rows
+            for p, _, _, _ in rows
         ],
     )
 
@@ -529,7 +565,7 @@ async def find_cheaper_dupes(ctx: ChatContext, slug: str) -> dict:
         summary = summaries.get(score.product_id)
         if summary is None:
             continue
-        payload = format_summary(summary)
+        payload = format_summary(summary, currency=currencies.get(score.product_id))
         payload["similarity"] = round(score.similarity, 3)
         payload["shared_actives"] = score.shared_actives
         if score.savings is not None:

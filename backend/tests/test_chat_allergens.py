@@ -169,3 +169,42 @@ def test_format_allergen_state_flags_unrecognised_terms():
     assert "fragrance" in out["avoiding"]
     assert out["not_recognised"] == ["unobtainium"]
     assert "NOT being filtered" in out["note"]
+
+
+# --- currency ---------------------------------------------------------------
+#
+# A price without a currency is a price the model has to guess a symbol for, and
+# an observed run guessed wrong - USD figures rendered with a pound sign. Every
+# payload carrying a price must therefore carry its currency.
+
+
+class _FakeSummary:
+    slug = "x"
+    brand = "Brand"
+    name = "Product"
+    category = "serum"
+    size_label = "30ml"
+    best_price = 12.5
+    retailer_count = 3
+    on_sale = False
+    key_actives: list[str] = []
+
+
+def test_format_summary_always_includes_a_currency():
+    from app.chat.tools import format_summary
+
+    assert format_summary(_FakeSummary())["currency"] == "USD"
+    assert format_summary(_FakeSummary(), currency="SGD")["currency"] == "SGD"
+
+
+def test_format_prices_reports_the_currency_of_its_rows():
+    rows = [{"retailer": "A", "price": 10.0, "in_stock": True, "currency": "SGD"}]
+    assert format_prices(rows, currency="SGD")["currency"] == "SGD"
+
+
+def test_currency_helper_prefers_the_row_value_over_the_default():
+    from app.chat.tools import DEFAULT_CURRENCY, _currency_of
+
+    assert _currency_of([{"currency": "EUR"}]) == "EUR"
+    assert _currency_of([{}]) == DEFAULT_CURRENCY
+    assert _currency_of([]) == DEFAULT_CURRENCY
