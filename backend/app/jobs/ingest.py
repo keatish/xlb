@@ -74,31 +74,51 @@ COMPARE_RETAILER = "ohlolly"
 # TREATMENT for anything it does not recognise, which silently turns a hair brush
 # into a skincare treatment. Scope has to be decided before classification.
 #
-# README scope: skincare only. Makeup, haircare, fragrance and tools are out.
+# README scope: facial skincare only. Makeup, haircare, fragrance, tools, body
+# care and merchandise are all out.
+#
+# These are matched against the retailer's own product_type, which is the most
+# reliable signal available: Soko Glam files its whole body range as "Body" and
+# its merchandise as "SWAG", so two entries here exclude ~18 products that no
+# amount of title matching would catch reliably.
 OUT_OF_SCOPE_TYPES = {
     "skincare set", "gift set", "set", "kit", "tools", "tool", "device",
     "hair brush", "hair treatment", "hair care", "haircare", "shampoo",
-    "conditioner", "body care", "bodycare", "fragrance", "perfume",
-    "lip color", "lipstick", "lip tint", "makeup", "makeup remover",
-    "bb/cc cream", "cushion", "foundation", "concealer", "mascara",
-    "eyeshadow", "blush", "brow", "eyeliner", "nail", "supplement",
-    "accessories", "apparel", "candle", "book",
+    "conditioner", "body", "body care", "bodycare", "body wash",
+    "fragrance", "perfume", "lip color", "lipstick", "lip tint",
+    "makeup", "makeup remover", "bb/cc cream", "cushion", "foundation",
+    "concealer", "mascara", "eyeshadow", "blush", "brow", "eyeliner",
+    "nail", "supplement", "accessories", "apparel", "swag", "merch",
+    "merchandise", "candle", "book", "gift card", "e-gift card",
 }
 
-# Title markers that mean "not a single skincare SKU" even when product_type is
-# blank or misleading. A set has no one INCI list, size or barcode, so it cannot
-# be a canonical product in this schema.
+# Title markers that mean "not a single facial skincare SKU" even when
+# product_type is blank or misleading. A set has no one INCI list, size or
+# barcode, so it cannot be a canonical product in this schema.
+#
+# `lowered` is space-padded before matching, so a leading space anchors a word
+# boundary: " cap " must not also match "capsule".
 OUT_OF_SCOPE_MARKERS = (
     " set ", " set(", "set (", "bundle", " kit", " duo", " trio",
     "gift", "sampler", "discovery", "brush", "headband", "hair ",
     "shampoo", "conditioner", "lip balm", "lip oil", "lip tint",
-    "body wash", "body lotion", "hand cream", "foot ", "device",
-    "led ", "roller", "gua sha", "tweezer", "spatula", "e-gift",
+    "hand cream", "foot ", "device", "led ", "roller", "gua sha",
+    "tweezer", "spatula", "e-gift",
+    # Body care - adjacent to skincare but out of the README's scope.
+    "body wash", "body lotion", "body butter", "body oil", "body serum",
+    "body cream", "body exfoliator", "body scrub", "body mist", "body balm",
+    # Merchandise and apparel.
+    " cap ", " hat ", " tote ", " shirt", "t-shirt", " sock", " mug ",
+    "sticker", "keychain", "pouch", "logo ", "tumbler", "beanie",
 )
+
+# Tag substrings that mean out-of-scope, checked when neither product_type nor
+# title gave it away.
+OUT_OF_SCOPE_TAGS = ("gift set", "hair", "makeup", "fragrance", "tools", "body care", "swag")
 
 
 def is_in_scope(product_type: str | None, title: str, tags: list[str] | None = None) -> bool:
-    """Is this a single skincare SKU we can model as one canonical product?"""
+    """Is this a single facial skincare SKU we can model as one canonical product?"""
     ptype = (product_type or "").strip().lower()
     if ptype in OUT_OF_SCOPE_TYPES:
         return False
@@ -110,7 +130,7 @@ def is_in_scope(product_type: str | None, title: str, tags: list[str] | None = N
         return False
 
     tag_text = " ".join(tags or []).lower()
-    for word in ("gift set", "hair", "makeup", "fragrance", "tools"):
+    for word in OUT_OF_SCOPE_TAGS:
         if word in tag_text and "skincare" not in tag_text:
             return False
 
@@ -196,18 +216,27 @@ async def ensure_reference_data(session) -> tuple[dict[str, Ingredient], dict[st
 
 
 async def ensure_brand(session, name: str | None, cache: dict[str, Brand]) -> Brand:
+    """Get or create one Brand row, matched on slug.
+
+    Matching on the exact name is not enough: retailers disagree about casing, so
+    the live feed says "NATURIUM" where the seed data says "Naturium". Those are
+    one brand, and brand.slug is unique, so looking up by name and inserting
+    anyway violates the constraint. The slug is the identity here.
+    """
     brand_name = (name or "Unknown").strip() or "Unknown"
     if brand_name in cache:
         return cache[brand_name]
 
+    slug = (slugify(brand_name) or slugify(f"brand-{brand_name}"))[:140]
+
     existing = (
-        await session.execute(select(Brand).where(Brand.name == brand_name))
+        await session.execute(select(Brand).where(Brand.slug == slug))
     ).scalar_one_or_none()
     if existing is None:
         existing = Brand(
-            name=brand_name,
-            slug=slugify(brand_name) or slugify(f"brand-{brand_name}"),
-            normalized_name=brand_name.lower(),
+            name=brand_name[:120],
+            slug=slug,
+            normalized_name=brand_name.lower()[:120],
         )
         session.add(existing)
         await session.flush()
@@ -634,6 +663,12 @@ async def ingest(limit: int, with_ingredients: bool, dry_run: bool, compare_pric
                         result.method.value,
                         result.confidence,
                     )
+
+            if not dry_run:
+                # Commit per product. A long run is mostly time spent waiting on
+                # throttled requests, so a single bad row at item 34 of 60 must
+                # not discard the 33 already fetched.
+                await session.commit()
 
         if dry_run:
             await session.rollback()

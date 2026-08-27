@@ -102,13 +102,15 @@ async def list_products(
 @router.get("/filters", response_model=FilterOptions)
 async def filter_options(session: AsyncSession = Depends(get_session)) -> FilterOptions:
     """Everything the filter sidebar needs, in one request."""
-    counts = dict(
-        (
-            await session.execute(
-                select(Product.category, func.count()).group_by(Product.category)
-            )
-        ).all()
-    )
+    products = list((await session.execute(product_query())).scalars().unique())
+
+    # Counts come from the visible set, not from a COUNT(*) over the table: a
+    # sidebar that advertises 12 cleansers and then lists 3 is worse than no count.
+    counts: dict[str, int] = {}
+    for product in products:
+        key = getattr(product.category, "value", product.category)
+        counts[key] = counts.get(key, 0) + 1
+
     categories = [
         {"key": key, "label": label, "count": counts[key]}
         for key, label in CATEGORY_LABELS.items()
@@ -119,12 +121,17 @@ async def filter_options(session: AsyncSession = Depends(get_session)) -> Filter
         ConcernOut(key=c.key, label=c.label, description=c.description)
         for c in (await session.execute(select(Concern).order_by(Concern.label))).scalars()
     ]
+
+    # Only offer brands that have a product the catalog will actually show.
+    # Listing a brand whose every product is hidden gives the user a filter that
+    # returns nothing.
+    visible_brand_ids = {p.brand_id for p in products}
     brands = [
         BrandOut(id=b.id, name=b.name, slug=b.slug)
         for b in (await session.execute(select(Brand).order_by(Brand.name))).scalars()
+        if b.id in visible_brand_ids
     ]
 
-    products = list((await session.execute(product_query())).scalars().unique())
     prices = await latest_prices(session, [p.id for p in products])
     best = [
         s.best_price

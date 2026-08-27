@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     # Matching: listings below this confidence are hidden from the public price table
     match_confidence_threshold: float = 0.85
 
+    # Synthetic seed products (jobs/seed.py) are development scaffolding: fictional
+    # retailers, invented prices, no images. They are hidden from the API by default
+    # so the catalog only shows products backed by a real listing. Set true to see
+    # them again - useful when working on the app with no network.
+    show_synthetic_products: bool = False
+
     # Chat assistant. Talks to an OpenAI-compatible chat-completions endpoint
     # (OpenCode). No defaults for the endpoint or key on purpose: an unset key
     # must fail loudly at the route rather than silently point somewhere wrong.

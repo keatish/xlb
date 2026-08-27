@@ -38,14 +38,45 @@ from app.services.analysis import Analysis, analyze
 STALE_AFTER = timedelta(hours=36)
 
 
-def product_query() -> Select:
+# jobs/seed.py registers its fictional retailers with a "seed-" scraper_key. That
+# prefix is the only marker distinguishing synthetic scaffolding from a real
+# listing, and deriving it costs nothing - adding an is_synthetic column would
+# need a migration, and Alembic is not wired up yet.
+SYNTHETIC_SCRAPER_PREFIX = "seed-"
+
+
+def real_listing_exists() -> Select:
+    """Product ids carrying at least one listing from a non-synthetic retailer."""
+    return (
+        select(Listing.product_id)
+        .join(Retailer, Retailer.id == Listing.retailer_id)
+        .where(Retailer.scraper_key.notlike(f"{SYNTHETIC_SCRAPER_PREFIX}%"))
+    )
+
+
+def product_query(include_synthetic: bool | None = None) -> Select:
+    """Base product select, with synthetic seed products excluded by default.
+
+    Every product read in the app funnels through here - list, deals, detail,
+    dupes, quiz and the chat tools - so filtering once here is what keeps
+    synthetic rows from leaking into one surface after being hidden from another.
+
+    Pass include_synthetic to override the `show_synthetic_products` setting.
+    """
     # The nested selectinload matters: without it, reading link.ingredient later
     # triggers a lazy load outside the async context and raises MissingGreenlet.
-    return select(Product).options(
+    stmt = select(Product).options(
         selectinload(Product.brand),
         selectinload(Product.ingredients).selectinload(ProductIngredient.ingredient),
         selectinload(Product.concerns).selectinload(ProductConcern.concern),
     )
+
+    if include_synthetic is None:
+        include_synthetic = get_settings().show_synthetic_products
+    if not include_synthetic:
+        stmt = stmt.where(Product.id.in_(real_listing_exists()))
+
+    return stmt
 
 
 async def latest_prices(

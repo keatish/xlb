@@ -131,9 +131,33 @@ Two things worth knowing about live rows:
   Barcode matching carries the weight instead, which is why cross-retailer
   matches come back at confidence 1.0 or not at all.
 
-Scope is enforced in `ingest.py`, not in `classify_category()` — that function is
-a classifier with a `TREATMENT` fallback, so left to itself it will happily file
-a hair brush as skincare.
+Scope is enforced by `is_in_scope()` in `ingest.py`, not by `classify_category()`
+— that function is a classifier with a `TREATMENT` fallback, so left to itself it
+will happily file a hair brush as skincare. The retailer's own `product_type` is
+the most reliable signal: Soko Glam files its whole body range as `Body` and its
+merchandise as `SWAG`, so two entries in `OUT_OF_SCOPE_TYPES` exclude ~18
+products that no amount of title matching would catch. `tests/test_ingest_scope.py`
+pins the cases, all of them real titles from the live feed.
+
+### Synthetic products are hidden by default
+
+Once real products exist, the synthetic ones are just noise in the catalog: they
+have fictional retailers, invented prices and no images. `product_query()` in
+`api/deps.py` therefore returns only products carrying at least one listing from
+a non-synthetic retailer, identified by the `seed-` prefix on `scraper_key`.
+
+Every product read in the app — list, deals, detail, dupes, quiz and the chat
+tools — funnels through `product_query()`, which is what stops synthetic rows
+leaking into one surface after being hidden from another.
+
+To see them again, e.g. when working offline:
+
+```bash
+SHOW_SYNTHETIC_PRODUCTS=true python -m uvicorn app.main:app --reload
+```
+
+The marker is derived rather than stored. An `is_synthetic` column would be
+cleaner, but it needs a migration and Alembic is not wired up yet.
 
 ## Status
 
