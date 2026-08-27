@@ -1,0 +1,157 @@
+"""Pydantic response/request models."""
+
+from __future__ import annotations
+
+from datetime import datetime
+
+from pydantic import BaseModel, Field
+
+
+class BrandOut(BaseModel):
+    id: int
+    name: str
+    slug: str
+
+
+class ConcernOut(BaseModel):
+    key: str
+    label: str
+    description: str | None = None
+
+
+class IngredientOut(BaseModel):
+    position: int
+    inci_name: str
+    common_name: str | None = None
+    function: str | None = None
+    is_active: bool = False
+    is_irritant: bool = False
+    comedogenic_rating: int | None = None
+    active_group: str | None = None
+    description: str | None = None
+    known: bool = True
+    is_prominent: bool = False
+
+
+class RetailerPrice(BaseModel):
+    retailer: str
+    retailer_slug: str
+    url: str
+    price: float | None = None
+    was_price: float | None = None
+    currency: str = "USD"
+    in_stock: bool = True
+    last_scraped_at: datetime | None = None
+    is_stale: bool = False
+    is_best: bool = False
+
+
+class PricePoint(BaseModel):
+    date: datetime
+    price: float
+
+
+class PriceHistory(BaseModel):
+    retailer: str
+    retailer_slug: str
+    points: list[PricePoint]
+
+
+class ProductSummary(BaseModel):
+    id: int
+    slug: str
+    name: str
+    brand: str
+    category: str
+    size_label: str | None = None
+    image_url: str | None = None
+    best_price: float | None = None
+    highest_price: float | None = None
+    retailer_count: int = 0
+    on_sale: bool = False
+    concerns: list[str] = Field(default_factory=list)
+    key_actives: list[str] = Field(default_factory=list)
+
+
+class ProductAnalysis(BaseModel):
+    active_groups: list[str] = Field(default_factory=list)
+    max_comedogenic: int = 0
+    has_fragrance: bool = False
+    has_alcohol: bool = False
+    has_essential_oil: bool = False
+    known_count: int = 0
+    unknown_count: int = 0
+
+
+class ProductDetail(ProductSummary):
+    description: str | None = None
+    upc: str | None = None
+    ingredients: list[IngredientOut] = Field(default_factory=list)
+    analysis: ProductAnalysis = Field(default_factory=ProductAnalysis)
+    prices: list[RetailerPrice] = Field(default_factory=list)
+    lowest_90d: float | None = None
+    highest_90d: float | None = None
+
+
+class ProductPage(BaseModel):
+    items: list[ProductSummary]
+    total: int
+    page: int
+    page_size: int
+    pages: int
+
+
+class DupeOut(BaseModel):
+    product: ProductSummary
+    similarity: float
+    shared_actives: list[str] = Field(default_factory=list)
+    savings: float | None = None
+
+
+class QuizRequest(BaseModel):
+    skin_type: str = "normal"
+    concerns: list[str] = Field(default_factory=list)
+    sensitive: bool = False
+    acne_prone: bool = False
+    fragrance_free: bool = False
+    budget_max: float | None = None
+    categories: list[str] = Field(default_factory=list)
+    limit: int = 12
+
+
+class Recommendation(BaseModel):
+    product: ProductSummary
+    score: float
+    reasons: list[str] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
+
+
+class ConflictOut(BaseModel):
+    id: str
+    severity: str
+    title: str
+    explanation: str
+    guidance: str
+    products: list[str] = Field(default_factory=list)
+
+
+class RoutineOut(BaseModel):
+    am: list[ProductSummary] = Field(default_factory=list)
+    pm: list[ProductSummary] = Field(default_factory=list)
+
+
+class QuizResponse(BaseModel):
+    recommendations: list[Recommendation] = Field(default_factory=list)
+    routine: RoutineOut = Field(default_factory=RoutineOut)
+    conflicts: list[ConflictOut] = Field(default_factory=list)
+
+
+class ConflictRequest(BaseModel):
+    product_ids: list[int] = Field(default_factory=list)
+
+
+class FilterOptions(BaseModel):
+    categories: list[dict]
+    concerns: list[ConcernOut]
+    brands: list[BrandOut]
+    price_range: dict
